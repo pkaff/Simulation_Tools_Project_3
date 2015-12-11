@@ -1,29 +1,29 @@
 from scipy import *
 from scipy.linalg import *
 import numpy as np
+	
+#sleeve constants
+m_s = 3.0e-4 #mass sleeve
+r_s = 3.1e-3 #inner radius of the sleeve
+h_s = 2.0e-2 #half height of the sleeve
+J_s = 5.0e-9 #moment of inertia for sleeve
+l_s = 1.0e-2 #vertical distance between sleeve and rotation axis
 
-def pecker(t, y, yd, sw):
+#bird constants
+l_b = 2.01e-2 #beak x-coords in the birds coordinate system
+h_b = 2.1e-2 # beak y-coords in the birds coordinate system
+J_b = 7.0e-7 #moment of inertia for bird
+m_b = 4.5e-3 #mass bird
+
+#other constants
+l_g = 1.5e-2 #vertical distance between bird's origin and rotation axis of the spring
+c_p = 5.6e-3 #spring constant
+g = 9.81 #graviy constant
+r0 = 2.5e-3 #radius of the bar
+	
+def pecker(t, y, yd, sw): #index 1
 	#y = [z, phi_s, phi_b, z', phi_s', phi_b', lambda_1, lambda_2]
 	#yd = [z', phi_s', phi_b', z'', phi_s'', phi_b'', lambda_1', lambda_2']
-	
-	#sleeve constants
-	m_s = 3.0e-4 #mass sleeve
-	r_s = 3.1e-3 #inner radius of the sleeve
-	h_s = 2.0e-2 #half height of the sleeve
-	J_s = 5.0e-9 #moment of inertia for sleeve
-	l_s = 1.0e-2 #vertical distance between sleeve and rotation axis
-	
-	#bird constants
-	l_b = 2.01e-2 #beak x-coords in the birds coordinate system
-	h_b = 2.1e-2 # beak y-coords in the birds coordinate system
-	J_b = 7.0e-7 #moment of inertia for bird
-	m_b = 4.5e-3 #mass bird
-	
-	#other constants
-	l_g = 1.5e-2 #vertical distance between bird's origin and rotation axis of the spring
-	c_p = 5.6e-3 #spring constant
-	g = 9.81 #graviy constant
-	r0 = 2.5e-3 #radius of the bar
 	
 	#initial computations and assignments
 	lamb = y[6:8]
@@ -98,21 +98,29 @@ def pecker(t, y, yd, sw):
 	
 	return hstack((res_1, res_2, res_3))
 	
-def state_events(t, y, sw):
+def state_events(t, y, yd, sw):
 	'''
 	This is the function that keeps track of events. When the sign of any of the functions
 	changed, we have an event.
 	'''
-	if sw[0]:
+	if sw[0]: #state 1
 		#transition 1: State 1 and phi_b' < 0 switch to state 2 when h_s*phi_s = -(r_s - r0)
-	else if sw[1]:
+		e_0 = h_s * y[1] + (r_s - r0)
 		#transition 2: State 1 and phi_b' > 0 switch to state 3 when h_s*phi_s = (r_s - r0)
-	else if sw[2]:
+		e_1 = h_s * y[1] - (r_s - r0)
+	elif sw[1]: #state 2
 		#transition 3: State 2 switch to state 1 if lambda_1 changes sign
-	else if sw[3]:
+		e_0 = y[6]
+		#dummy
+		e_1 = 0
+	elif sw[2]: #state 3
 		#transition 4: State 3 and phi_b' < 0 switch to state 1 if lambda_1 changes sign
-	else if sw[4]:
-		#transition 5: State 3 and phi_b' < 0 switch to state 4 (beak hit, switch to state 3 and change sign of phi_s') if h_b * phi_b = l_s + l_g - l_b - r0
+		e_0 = y[6]
+		#transition 5: State 3 and phi_b' < 0 switch to state 4 (beak hit, switch to state 3 and change sign of phi_s') if h_b * phi_b = l_s + l_g - l_b - r0'
+		e_1 = h_b * y[2] - (l_s + l_g - l_b - r0)
+
+	print([e_0, e_1])
+	return np.array([e_0, e_1])
 		
 def handle_event(solver, event_info):
 	'''
@@ -120,8 +128,66 @@ def handle_event(solver, event_info):
 	specified by the event functions
 	'''
 	state_info = event_info[0]
-	
 	if state_info[0] != 0: #Check if the first event function has been triggered
-	
-		if solver.sw[0]: #transition 1
+		if solver.sw[0]: #state 1
+			if solver.yd[2] < 0: #phi_b' < 0
+				#momentum conservation
+				# print("zp:", solver.yd[0])
+				# print("phisp:", solver.yd[1])
+				# print("phibp:", solver.yd[2])
+				mom_left = m_b * l_g * solver.yd[0] + (m_b * l_s * l_g) * solver.yd[1] + (J_b + m_b * l_g**2) * solver.yd[2]
+				#force z_p and phi_sp to 0
+				zp_new = 0
+				phi_sp_new = 0
+				#calculate new momentum
+				phi_bp_new = mom_left/(J_b + m_b * l_g**2)
+
+				#give new values to solver
+				solver.y[3] = zp_new
+				solver.yd[0] = zp_new
+				solver.y[4] = phi_sp_new
+				solver.yd[1] = phi_sp_new
+				solver.y[5] = phi_bp_new
+				solver.yd[2] = phi_bp_new
+				
+				#switch to state 2
+				solver.sw[0] = not solver.sw[0]
+				solver.sw[1] = not solver.sw[1]
+		elif solver.sw[1]: #state 2
+			#switch to state 1
+			solver.sw[1] = not solver.sw[1]
+			solver.sw[0] = not solver.sw[0]
+		elif solver.sw[2]: #state 3
+			#switch to state 1
+			solver.sw[2] = not solver.sw[2]
+			solver.sw[0] = not solver.sw[0]
+	elif state_info[1] != 0: #second event function
+		if solver.sw[0]: #state 1
+			if solver.yd[2] > 0: #phi_b' < 0
+				#momentum conservation
+				mom_left = m_b * l_g * solver.yd[0] + (m_b * l_s * l_g) * yd[1] + (J_b + m_b * l_g**2) * solver.yd[2]
+				#force z_p and phi_sp to 0
+				zp_new = 0
+				phi_sp_new = 0
+				#calculate new momentum
+				phi_bp_new = mom_left/(J_b + m_b * l_g**2)
+
+				#give new values to solver
+				solver.y[3] = zp_new
+				solver.yd[0] = zp_new
+				solver.y[4] = phi_sp_new
+				solver.yd[1] = phi_sp_new
+				solver.y[5] = phi_bp_new
+				solver.yd[2] = phi_bp_new
+				
+				#switch to state 3
+				solver.sw[0] = not solver.sw[0]
+				solver.sw[2] = not solver.sw[2]
+		elif solver.sw[1]: #state 2
+			#dummy do nothing
+			pass
+		elif solver.sw[2]: #state 3
+			#beak hit, go to state 3, change sign of phi_b'
+			solver.y[5] = -solver.y[5]
+			solver.yd[2] = -solver.yd[2]
 			
