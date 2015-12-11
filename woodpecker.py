@@ -2,10 +2,10 @@ from scipy import *
 from scipy.linalg import *
 import numpy as np
 
-def pecker(t, y, yd, sw): #?
-	#y = [z, phi_s, phi_b]
+def pecker(t, y, yd, sw):
+	#y = [z, phi_s, phi_b, z', phi_s', phi_b', lambda_1, lambda_2]
+	#yd = [z', phi_s', phi_b', z'', phi_s'', phi_b'', lambda_1', lambda_2']
 	
-	#?
 	yn = y
 	ydn = yd
 	
@@ -40,6 +40,12 @@ def pecker(t, y, yd, sw): #?
 	m[1, 2] = m_b * l_s * l_g
 	m[2, 2] = J_b + m_b * l_g**2
 
+			
+	#Applied forces (f matrix)
+	ff = np.array([-g * (m_s + m_b), 
+		c_p * (y[2] - y[1]) - m_b * l_s * g, 
+		c_p * (y[1] - y[2]) - m_b * l_g * g])
+	
 	#Constraint matrix G
 	gp = np.zeros((2, 3))
 
@@ -56,11 +62,6 @@ def pecker(t, y, yd, sw): #?
 		
 		gyy[0] = 0
 		gyy[1] = 0
-		
-		#Applied forces (f matrix)
-		ff = np.array([-g * (m_s + m_b), 
-			c_p * (y[2] - y[1]) - m_b * l_s * g, 
-			c_p * (y[1] - y[2]) - m_b * l_g * g])
 			
 	elif sw[1]: #state 2
 		gp[0, 0] = 0
@@ -72,11 +73,6 @@ def pecker(t, y, yd, sw): #?
 	
 		gyy[0] = yd[1]
 		gyy[1] = yd[0] + r_s * yd[1]
-		
-		#Applied forces (f matrix)
-		ff = np.array([-g * (m_s + m_b), 
-			c_p * (y[2] - y[1]) - m_b * l_s * g, 
-			c_p * (y[1] - y[2]) - m_b * l_g * g])
 			
 		#?
 		yn[1] = (r0 - r_s)/h_s
@@ -92,11 +88,6 @@ def pecker(t, y, yd, sw): #?
 	
 		gyy[0] = yd[1]
 		gyy[1] = yd[0] + r_s * yd[1]
-		
-		#Applied forces (f matrix)
-		ff = np.array([-g * (m_s + m_b), 
-			c_p * (y[2] - y[1]) - m_b * l_s * g, 
-			c_p * (y[1] - y[2]) - m_b * l_g * g])
 		
 		#?
 		yn[1] = (r_s - r0)/h_s
