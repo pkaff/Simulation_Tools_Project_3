@@ -67,8 +67,8 @@ def pecker(t, y, yd, sw): #index 1
 		gp[0, 2] = 0
 		gp[1, 2] = 1
 		
-		gyy[0] = 0
-		gyy[1] = 0
+		gyy[0] = lamb[0]
+		gyy[1] = lamb[1]
 			
 	elif sw[1]: #state 2
 		gp[0, 0] = 0
@@ -105,9 +105,9 @@ def state_events(t, y, yd, sw):
 	'''
 	if sw[0]: #state 1
 		#transition 1: State 1 and phi_b' < 0 switch to state 2 when h_s*phi_s = -(r_s - r0)
-		e_0 = h_s * y[1] + (r_s - r0)
+		e_0 = (r_s - r0) +  h_s * y[1]
 		#transition 2: State 1 and phi_b' > 0 switch to state 3 when h_s*phi_s = (r_s - r0)
-		e_1 = h_s * y[1] - (r_s - r0)
+		e_1 = (r_s - r0) - h_s * y[1]
 	elif sw[1]: #state 2
 		#transition 3: State 2 switch to state 1 if lambda_1 changes sign
 		e_0 = y[6]
@@ -117,9 +117,8 @@ def state_events(t, y, yd, sw):
 		#transition 4: State 3 and phi_b' < 0 switch to state 1 if lambda_1 changes sign
 		e_0 = y[6]
 		#transition 5: State 3 and phi_b' < 0 switch to state 4 (beak hit, switch to state 3 and change sign of phi_s') if h_b * phi_b = l_s + l_g - l_b - r0'
-		e_1 = h_b * y[2] - (l_s + l_g - l_b - r0)
-
-	print([e_0, e_1])
+		e_1 = (l_s + l_g - l_b - r0) + h_b * y[2]
+	print(e_0, e_1)
 	return np.array([e_0, e_1])
 		
 def handle_event(solver, event_info):
@@ -128,18 +127,21 @@ def handle_event(solver, event_info):
 	specified by the event functions
 	'''
 	state_info = event_info[0]
+	print(state_info)
+	print(solver.sw)
+	print(solver.y)
+	print(solver.yd)
 	if state_info[0] != 0: #Check if the first event function has been triggered
 		if solver.sw[0]: #state 1
 			if solver.yd[2] < 0: #phi_b' < 0
 				#momentum conservation
-				# print("zp:", solver.yd[0])
-				# print("phisp:", solver.yd[1])
-				# print("phibp:", solver.yd[2])
 				mom_left = m_b * l_g * solver.yd[0] + (m_b * l_s * l_g) * solver.yd[1] + (J_b + m_b * l_g**2) * solver.yd[2]
+				
 				#force z_p and phi_sp to 0
 				zp_new = 0
 				phi_sp_new = 0
-				#calculate new momentum
+				
+				#calculate new momentum, I_before = I_after
 				phi_bp_new = mom_left/(J_b + m_b * l_g**2)
 
 				#give new values to solver
@@ -166,10 +168,12 @@ def handle_event(solver, event_info):
 			if solver.yd[2] > 0: #phi_b' < 0
 				#momentum conservation
 				mom_left = m_b * l_g * solver.yd[0] + (m_b * l_s * l_g) * yd[1] + (J_b + m_b * l_g**2) * solver.yd[2]
+				
 				#force z_p and phi_sp to 0
 				zp_new = 0
 				phi_sp_new = 0
-				#calculate new momentum
+				
+				#calculate new momentum, I_before = I_after
 				phi_bp_new = mom_left/(J_b + m_b * l_g**2)
 
 				#give new values to solver
