@@ -6,9 +6,6 @@ def pecker(t, y, yd, sw):
 	#y = [z, phi_s, phi_b, z', phi_s', phi_b', lambda_1, lambda_2]
 	#yd = [z', phi_s', phi_b', z'', phi_s'', phi_b'', lambda_1', lambda_2']
 	
-	yn = y
-	ydn = yd
-	
 	#sleeve constants
 	m_s = 3.0e-4 #mass sleeve
 	r_s = 3.1e-3 #inner radius of the sleeve
@@ -28,6 +25,16 @@ def pecker(t, y, yd, sw):
 	g = 9.81 #graviy constant
 	r0 = 2.5e-3 #radius of the bar
 	
+	#initial computations and assignments
+	lamb = y[6:8]
+	z = y[0]
+	phi_s = y[1]
+	phi_b = y[2]
+	zp = y[3]
+	phi_sp = y[4]
+	phi_bp = yd[5]
+	
+	
 	#Mass matrix
 	m = np.zeros((3, 3))
 	m[0, 0] = m_s + m_b
@@ -43,8 +50,8 @@ def pecker(t, y, yd, sw):
 			
 	#Applied forces (f matrix)
 	ff = np.array([-g * (m_s + m_b), 
-		c_p * (y[2] - y[1]) - m_b * l_s * g, 
-		c_p * (y[1] - y[2]) - m_b * l_g * g])
+		c_p * (phi_b - phi_s) - m_b * l_s * g, 
+		c_p * (phi_s - phi_b) - m_b * l_g * g])
 	
 	#Constraint matrix G
 	gp = np.zeros((2, 3))
@@ -57,8 +64,8 @@ def pecker(t, y, yd, sw):
 		gp[1, 0] = 0
 		gp[0, 1] = 1
 		gp[1, 1] = 0
-		gp[2, 0] = 0
-		gp[2, 1] = 1
+		gp[0, 2] = 0
+		gp[1, 2] = 1
 		
 		gyy[0] = 0
 		gyy[1] = 0
@@ -68,38 +75,53 @@ def pecker(t, y, yd, sw):
 		gp[1, 0] = 1
 		gp[0, 1] = h_s
 		gp[1, 1] = r_s
-		gp[2, 0] = 0
-		gp[2, 1] = 0
+		gp[0, 2] = 0
+		gp[1, 2] = 0
 	
-		gyy[0] = yd[1]
-		gyy[1] = yd[0] + r_s * yd[1]
+		gyy[0] = yd[4]
+		gyy[1] = yd[3] + r_s * yd[4]
 			
-		#?
-		yn[1] = (r0 - r_s)/h_s
-		ydn[1] = 0
-		
 	else: #state 3
 		gp[0, 0] = 0
 		gp[1, 0] = 1
 		gp[0, 1] = -h_s
 		gp[1, 1] = r_s
-		gp[2, 0] = 0
-		gp[2, 1] = 0
+		gp[0, 2] = 0
+		gp[1, 2] = 0
 	
-		gyy[0] = yd[1]
-		gyy[1] = yd[0] + r_s * yd[1]
+		gyy[0] = yd[4]
+		gyy[1] = yd[3] + r_s * yd[4]
 		
-		#?
-		yn[1] = (r_s - r0)/h_s
-		ydn[1] = 0
-			
-	#? compute residual
-	A = np.bmat([m, ydd], [-1*ff, gp.T])
-	b = zeros(A)
-	res_1 = yn
-	res_2 = ydn
-	res_3 = solve(A,b)
+	res_1 = yd[0:3] - y[3:6]
+	res_2 = dot(m, yd[3:6]) - ff[0:3] + dot(gp.T, lamb)
+	res_3 = lamb - gyy
 	
-	#compute residual
-	A = np.bmat([[m, gp.T], [gp, zeros([2,2])])
-	b = np.bmat([[ff[]])
+	return hstack((res_1, res_2, res_3))
+	
+def state_events(t, y, sw):
+	'''
+	This is the function that keeps track of events. When the sign of any of the functions
+	changed, we have an event.
+	'''
+	if sw[0]:
+		#transition 1: State 1 and phi_b' < 0 switch to state 2 when h_s*phi_s = -(r_s - r0)
+	else if sw[1]:
+		#transition 2: State 1 and phi_b' > 0 switch to state 3 when h_s*phi_s = (r_s - r0)
+	else if sw[2]:
+		#transition 3: State 2 switch to state 1 if lambda_1 changes sign
+	else if sw[3]:
+		#transition 4: State 3 and phi_b' < 0 switch to state 1 if lambda_1 changes sign
+	else if sw[4]:
+		#transition 5: State 3 and phi_b' < 0 switch to state 4 (beak hit, switch to state 3 and change sign of phi_s') if h_b * phi_b = l_s + l_g - l_b - r0
+		
+def handle_event(solver, event_info):
+	'''
+	Event handling. This functions is called when Assimulo finds an event as
+	specified by the event functions
+	'''
+	state_info = event_info[0]
+	
+	if state_info[0] != 0: #Check if the first event function has been triggered
+	
+		if solver.sw[0]: #transition 1
+			
