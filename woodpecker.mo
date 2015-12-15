@@ -39,55 +39,62 @@ equation
       (mS+mB)*der(zdot)+mB*lS*der(phiSdot)+mB*lG*der(phiBdot) = -(mS+mB)*g;
       (mB*lS)*der(zdot)+(Js+mB*lS^2)*der(phiSdot)+(mB*lS*lG)*der(phiBdot) = cP*(phiB-phiS)-mB*lS*g-lambda1;
       mB*lG*der(zdot)+mB*lS*lG*der(phiSdot)+(Jb+mB*lG^2)*der(phiBdot) = cP*(phiS-phiB)-mB*lG*g-lambda2;
-      der(lambda1)=0;
-      der(lambda2)=0;
+      lambda1=0;
+      lambda2=0;
     elseif state==2 then
       (mS+mB)*der(zdot)+mB*lS*der(phiSdot)+mB*lG*der(phiBdot) = -(mS+mB)*g-lambda2;
       (mB*lS)*der(zdot)+(Js+mB*lS^2)*der(phiSdot)+(mB*lS*lG)*der(phiBdot) = cP*(phiB-phiS)-mB*lS*g-hS*lambda1-rS*lambda2;
       mB*lG*der(zdot)+mB*lS*lG*der(phiSdot)+(Jb+mB*lG^2)*der(phiBdot) = cP*(phiS-phiB)-mB*lG*g;
       //(rS-r0)+hS*phiS=0;
-      0=hS*der(phiSdot)*phiSdot;
-      zdot+rS*phiSdot=0;
+      0=hS*der(phiSdot);
+      der(zdot)+rS*der(phiSdot)=0;
     else
       (mS+mB)*der(zdot)+mB*lS*der(phiSdot)+mB*lG*der(phiBdot) = -(mS+mB)*g-lambda2;
       (mB*lS)*der(zdot)+(Js+mB*lS^2)*der(phiSdot)+(mB*lS*lG)*der(phiBdot) = cP*(phiB-phiS)-mB*lS*g+hS*lambda1-rS*lambda2;
       mB*lG*der(zdot)+mB*lS*lG*der(phiSdot)+(Jb+mB*lG^2)*der(phiBdot) = cP*(phiS-phiB)-mB*lG*g;
       //(rS-r0)-hS*phiS=0;
-      0=-hS*der(phiSdot)*phiSdot;
-      zdot+rS*phiSdot=0;
+      0=-hS*der(phiSdot);
+      der(zdot)+rS*der(phiSdot)=0;
     end if;
 
 algorithm
 
-    if state==1 and phiBdot<0 and (hS*phiS+rS-r0)<0 then
+    when state==1 and phiBdot<0 and (hS*phiS+rS-r0)<0 then
       state:=2;
+      reinit(phiBdot, (mB*lG*pre(zdot) + (mB*lS*lG)*pre(phiSdot) + (Jb + mB*lG^2)*pre(phiBdot))/(Jb + mB*lG^2));
+      reinit(zdot, 0);
+      reinit(phiSdot, 0);
       Streams.print("1 -> 2");
-    elseif state==1 and phiBdot>0 and (hS*phiS-rS+r0)>0 then
+    end when;
+    when state==1 and phiBdot>0 and (hS*phiS-rS+r0)>0 then
+      reinit(phiBdot, (mB*lG*pre(zdot) + (mB*lS*lG)*pre(phiSdot) + (Jb + mB*lG^2)*pre(phiBdot))/(Jb + mB*lG^2));
+      reinit(zdot, 0);
+      reinit(phiSdot, 0);
       state:=3;
       Streams.print("1 -> 3");
-    end if;
+    end when;
 
-       when lambda1>0 then
+       when lambda1>10^(-8) then
           if state==2 then
           state:=1;
           Streams.print("2 -> 1");
           end if;
        end when;
-      when lambda1<0 then
+      when lambda1<-10^(-8) then
         if state==2 then
           state:=1;
           Streams.print("2 -> 1");
         end if;
       end when;
 
-       when lambda1>0 then
+       when lambda1>10^(-8) then
         if state==3 and phiBdot<0 then
           state:=1;
           Streams.print("3 -> 1");
         end if;
       end when;
 
-      when lambda1<0 then
+      when lambda1<-10^(-8) then
         if state==3 and phiBdot<0 then
         state:=1;
         Streams.print("3 -> 1");
@@ -104,6 +111,7 @@ algorithm
       reinit(phiBdot,-pre(phiBdot));
       Streams.print("4 -> 3");
     end when;
+    Streams.print("ldsfsdl");
 
   annotation (uses(Modelica(version="3.2.1")));
 end woodpecker;
