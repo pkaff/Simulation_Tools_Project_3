@@ -5,17 +5,15 @@ from woodpecker import *
 import matplotlib.pyplot as P
 
 def run_example():
-	def residual(t, y, yd, sw):
-		return pecker(t, y, yd, sw)
 
 	#initial values
 	t0 = 0
-	y0 = np.array([10, 0, 0, 0, 0, 0, 0, 0]) #|phi_s| <= 0.1034 rad, |phi_b| <= 0.12 rad
+	y0 = np.array([10, 0.1, 0, 0, 0, 0, 0, 0]) #|phi_s| <= 0.1034 rad, |phi_b| <= 0.12 rad
 	yd0 = np.array([0, 0, 0, 0, 0, 0, 0, 0])
-	sw = np.array([True, False, False])
+	sw = [True, False, False]
 	
 	#problem
-	model = Implicit_Problem(residual, y0, yd0, t0, sw0=sw)
+	model = Implicit_Problem(pecker, y0, yd0, t0, sw0=sw)
 	model.state_events = state_events #from woodpecker.py
 	model.handle_event = handle_event #from woodpecker.py
 	model.name = 'Woodpeckermodel'

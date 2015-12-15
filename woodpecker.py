@@ -32,7 +32,7 @@ def pecker(t, y, yd, sw): #index 1
 	phi_b = y[2]
 	zp = y[3]
 	phi_sp = y[4]
-	phi_bp = yd[5]
+	phi_bp = y[5]
 	
 	
 	#Mass matrix
@@ -93,9 +93,8 @@ def pecker(t, y, yd, sw): #index 1
 		gyy[1] = yd[3] + r_s * yd[4]
 		
 	res_1 = yd[0:3] - y[3:6]
-	res_2 = dot(m, yd[3:6]) - ff[0:3] + dot(gp.T, lamb)
-	res_3 = lamb - gyy
-	
+	res_2 = dot(m, yd[3:6]) - ff + dot(gp.T, lamb)
+	res_3 = gyy
 	return hstack((res_1, res_2, res_3))
 	
 def state_events(t, y, yd, sw):
@@ -103,6 +102,7 @@ def state_events(t, y, yd, sw):
 	This is the function that keeps track of events. When the sign of any of the functions
 	changed, we have an event.
 	'''
+
 	if sw[0]: #state 1
 		#transition 1: State 1 and phi_b' < 0 switch to state 2 when h_s*phi_s = -(r_s - r0)
 		e_0 = (r_s - r0) +  h_s * y[1]
@@ -118,7 +118,6 @@ def state_events(t, y, yd, sw):
 		e_0 = y[6]
 		#transition 5: State 3 and phi_b' < 0 switch to state 4 (beak hit, switch to state 3 and change sign of phi_s') if h_b * phi_b = l_s + l_g - l_b - r0'
 		e_1 = (l_s + l_g - l_b - r0) + h_b * y[2]
-	print(e_0, e_1)
 	return np.array([e_0, e_1])
 		
 def handle_event(solver, event_info):
@@ -167,7 +166,7 @@ def handle_event(solver, event_info):
 		if solver.sw[0]: #state 1
 			if solver.yd[2] > 0: #phi_b' < 0
 				#momentum conservation
-				mom_left = m_b * l_g * solver.yd[0] + (m_b * l_s * l_g) * yd[1] + (J_b + m_b * l_g**2) * solver.yd[2]
+				mom_left = m_b * l_g * solver.yd[0] + (m_b * l_s * l_g) * solver.yd[1] + (J_b + m_b * l_g**2) * solver.yd[2]
 				
 				#force z_p and phi_sp to 0
 				zp_new = 0
