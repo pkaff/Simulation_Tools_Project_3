@@ -8,9 +8,9 @@ def run_example():
 
 	#initial values
 	t0 = 0
-	y0 = np.array([10, 0.1, 0, 0, 0, 0, 0, 0]) #|phi_s| <= 0.1034 rad, |phi_b| <= 0.12 rad
-	yd0 = np.array([0, 0, 0, 0, 0, 0, 0, 0])
-	sw = [True, False, False]
+	y0 = np.array([0., -0.10344, -0.65, 0., 0. , 0., -0.628993, 0.047088]) #|phi_s| <= 0.1034 rad, |phi_b| <= 0.12 rad
+	yd0 = np.array([0., 0., 0., 0., 0., 0., 0., 0.])
+	sw = [False, True, False]
 	
 	#problem
 	model = Implicit_Problem(pecker, y0, yd0, t0, sw0=sw)
@@ -20,6 +20,10 @@ def run_example():
 	sim = IDA(model) #create IDA solver
 	tfinal = 2.0 #final time
 	ncp = 500 #number control points	
+	sim.suppress_alg = True
+	sim.rtol=1.e-6
+	sim.atol[6:8] = 1e6
+	sim.algvar[6:8] = 0
 	t, y, yd = sim.simulate(tfinal, ncp) #simulate
 	
 	#plot
@@ -33,6 +37,20 @@ def run_example():
 	ax2.plot(t, y[:, 1], label='phi_s')
 	ax2.plot(t, y[:, 2], label='phi_b')
 	legend = ax2.legend(loc='upper center', shadow=True)
+	P.grid()
+	
+	P.figure(2)
+	fig3, ax3 = P.subplots()
+	ax3.plot(t, y[:, 4], label='phi_sp')
+	ax3.plot(t, y[:, 5], label='phi_bp')
+	legend = ax3.legend(loc='upper center', shadow=True)
+	P.grid()
+	
+	P.figure(3)
+	fig4, ax4 = P.subplots()
+	ax4.plot(t, y[:, 6], label='lambda_1')
+	ax4.plot(t, y[:, 7], label='lambda_2')
+	legend = ax4.legend(loc='upper right', shadow=True)
 	P.grid()
 	
 	#event data
