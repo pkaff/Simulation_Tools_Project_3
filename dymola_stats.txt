@@ -1,0 +1,16 @@
+Integration terminated successfully at T = 2
+   CPU-time for integration      : 0.0343 seconds
+   CPU-time for one GRID interval: 0.0686 milli-seconds
+   Number of result points       : 855
+   Number of GRID   points       : 501
+   Number of (successful) steps  : 3239
+   Number of F-evaluations       : 8332
+   Number of H-evaluations       : 5088
+   Number of Jacobian-evaluations: 1460
+   Number of (model) time events : 0
+   Number of (U) time events     : 0
+   Number of state    events     : 177
+   Number of step     events     : 0
+   Minimum integration stepsize  : 3.92e-08
+   Maximum integration stepsize  : 0.00613
+   Maximum integration order     : 5
