@@ -17,18 +17,19 @@ model woodpecker "woodpecker model for project 3 in simulation tools"
   parameter Real cP=5.6*10^(-3) "spring konstant";
   parameter Real g=9.81 "gravity";
 
-  Real z(start=10) "z-coorcdinate for sleeve";
-  Real phiS(start=0.1) "sleeve angle";
-  Real phiB(start=0.07) "bird angle";
+  Real z(start=0.0) "z-coorcdinate for sleeve";
+  Real phiS(start=-0.10344) "sleeve angle";
+  Real phiB(start=-0.65) "bird angle";
 
-  Real zdot "first deriviative of z";
-  Real phiSdot "first deriviative of phiS";
-  Real phiBdot "first deriviative of phiB";
+  Real zdot(start=0.0) "first deriviative of z";
+  Real phiSdot(start=0.0) "first deriviative of phiS";
+  Real phiBdot(start=0) "first deriviative of phiB";
 
-  Real lambda1;
-  Real lambda2;
+  Real lambda1(start=-0.6911);
+  Real lambda2(start=-0.1416);
 
-  Integer state(start=1) "state of system";
+  Integer state(start=2, fixed=true) "state of system";
+  Integer count4(start=0) "number of times to state 4";
 
 equation
     der(z)=zdot;
@@ -65,8 +66,11 @@ algorithm
   //Streams.print("lambda1 = " + String(lambda1));
     when state==1 and phiBdot<0 and (hS*phiS+rS-r0)<0 then
       state:=2;
+      Streams.print("A");
       reinit(phiBdot, (mB*lG*pre(zdot) + (mB*lS*lG)*pre(phiSdot) + (Jb + mB*lG^2)*pre(phiBdot))/(Jb + mB*lG^2));
+      Streams.print("B");
       reinit(zdot, 0);
+      Streams.print("C");
       reinit(phiSdot, 0);
       Streams.print("lala: " + String(pre(state))+ " -> " + String(state));
       Streams.print("1 -> 2");
@@ -82,24 +86,22 @@ algorithm
       if state==2 then
         state:=1;
         Streams.print("2 -> 1 A");
-      end if;
-    elsewhen lambda1<-10^(-4) then
-      if state==2 then
-        state:=1;
-        Streams.print("2 -> 1 B");
-      end if;
-    elsewhen lambda1>10^(-4) then
-      if state==3 and phiBdot<0 then
+      elseif state==3 and phiBdot<0 then
         state:=1;
         Streams.print("3 -> 1 A");
       end if;
-    elsewhen lambda1<-10^(-4) then
-      if state==3 and phiBdot<0 then
+    elsewhen lambda1<-10^(-4) and 1 == 2 then
+      if state==2 then
+        state:=1;
+        Streams.print("2 -> 1 B");
+      elseif state==3 and phiBdot<0 then
         state:=1;
         Streams.print("3 -> 1 B");
       end if;
     elsewhen state==3 and phiBdot>0 and hB*phiB-lS-lG+lB+r0>0 then
       reinit(phiBdot,-pre(phiBdot));
+      count4 := pre(count4) + 1;
+      Streams.print("count4 = " + String(count4));
       Streams.print("3 -> 4 -> 3");
     end when;
     //Streams.print("ldsfsdl");
