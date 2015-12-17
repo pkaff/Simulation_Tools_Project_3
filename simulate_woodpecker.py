@@ -22,8 +22,8 @@ def run_example():
 	ncp = 500 #number control points	
 	sim.suppress_alg = True
 	sim.rtol=1.e-6
-	sim.atol[3:8] = 1e6
-	sim.algvar[3:8] = 0
+	sim.atol[6:8] = 1e6
+	sim.algvar[6:8] = 0
 	t, y, yd = sim.simulate(tfinal, ncp) #simulate
 	
 	#plot
@@ -41,8 +41,8 @@ def run_example():
 	
 	P.figure(2)
 	fig3, ax3 = P.subplots()
-	ax3.plot(t, yd[:, 4], label='phi_sp')
-	ax3.plot(t, yd[:, 5], label='phi_bp')
+	ax3.plot(t, y[:, 4], label='phi_sp')
+	ax3.plot(t, y[:, 5], label='phi_bp')
 	legend = ax3.legend(loc='upper center', shadow=True)
 	P.grid()
 	
