@@ -46,6 +46,13 @@ def run_example():
 	legend = ax3.legend(loc='upper center', shadow=True)
 	P.grid()
 	
+	P.figure(3)
+	fig4, ax4 = P.subplots()
+	ax4.plot(t, y[:, 6], label='lambda_1')
+	ax4.plot(t, y[:, 7], label='lambda_2')
+	legend = ax4.legend(loc='upper right', shadow=True)
+	P.grid()
+	
 	#event data
 	sim.print_event_data()
 	
