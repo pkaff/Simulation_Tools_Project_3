@@ -1,0 +1,8 @@
+The woodpecker
+This section describes the structure of our Dymola code. All the geometrical and mechanical constants are defined as Real parameters. The state variables and the constraint variabes are defined as real state variables and are given consistent start values. There is also an integer variable \texttt{state} to keep track of the current state of the system.
+
+In the equation section of the dymola code all the equations for the system are given. Which equations that are currently active are decided by if-statements that depend on the variable state. 
+
+The switching between the states are handled in the algorithm section. When-statements are used to switch between states. The conditions that are given as equalities in the instructions have been rewritten as inequalities to make sure the code handles numerical errors. Because of numerical errors we have also added a tolerance when detecting if $\lambda$ changes sign.
+
+The values of some of state variables needs to be changed when the beak of the bird hits the bar and when the sleeve gets blocked. This is also handled in the algorithm section. To change these values we use the Dymola methods \texttt{reinit}, that reinitializes the value of a state variable, and \texttt{pre} that calculates the value of a state variable at the moment of a state transistion.
